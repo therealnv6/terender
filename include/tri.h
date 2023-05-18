@@ -50,6 +50,7 @@ namespace rend
 				std::cout << std::endl;
 			}
 		}
+
 		void rotate_max(double angle, double max)
 		{
 			if (rotation_angle < max)

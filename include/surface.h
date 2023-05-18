@@ -26,7 +26,7 @@ namespace rend
 
 		void draw_at(int x, int y, char c)
 		{
-			if (x >= 0 && x < WIDTH && y >= 0 && y < HEIGHT)
+			if (x >= 0 && x < WIDTH && y >= 0 && y < HEIGHT && chars[y][x] == ' ')
 			{
 				chars[y][x] = c;
 			}
