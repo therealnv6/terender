@@ -9,52 +9,40 @@
 
 int main()
 {
-	constexpr uint32_t WIDTH = 80;
-	constexpr uint32_t HEIGHT = 60;
+	constexpr uint32_t WIDTH = 100;
+	constexpr uint32_t HEIGHT = 40;
 
-	rend::surface<HEIGHT, WIDTH> surface;
-	rend::cube<HEIGHT, WIDTH> cube {
+	rend::surface surface(HEIGHT, WIDTH);
+	rend::cube cube(surface, 1.2);
+
+	// just ignore this lol
+	rend::tri tri {
 		surface,
-		2.0,
-		{40.0, 10.0, 0.0}	// Same position as the triangle
-	};
-	rend::tri<HEIGHT, WIDTH> tri {
-		surface,
-		{40.0, 10.0},
+		{25.0, 10.0},
 		{35.0, 20.0},
-		{45.0, 20.0}
+		{35.0, 20.0}
 	};
 
 	auto last = std::chrono::high_resolution_clock::now();
-	auto frametime = 0;
-	auto fps = 0;
-
+	double delta_time = 0.0;
 	while (true)
 	{
-		// Clear the terminal window
 		surface.clear();
-		cube.rotate(0.01, 0.01, 0.01);
-		cube.draw();
-		// tri.draw();
-		// tri.rotate_max(0.5, 1.0);
+		{
+			cube.draw();
+			cube.rotate(100.0 * delta_time, 100.0 * delta_time);
+		}
 		surface.render();
 
-		frametime++;
-
 		auto now = std::chrono::high_resolution_clock::now();
-		auto time_since_last = std::chrono::duration<float, std::chrono::seconds::period>(now - last).count();
+		delta_time = std::chrono::duration<double>(now - last).count();
+		last = now;
 
-		if (time_since_last >= 1.0)
 		{
-			fps = frametime;
-			last = now;
-			frametime = 0;
+			double fps = 1.0 / delta_time;
+			std::cout << "fps: " << fps << std::endl;
 		}
 
-		std::cout << "fps: " << fps << std::endl;
-
-		// we have to sleep here.
-		std::this_thread::sleep_for(std::chrono::milliseconds(12));
-		// break;
+		std::this_thread::sleep_for(std::chrono::microseconds(250));
 	}
 }

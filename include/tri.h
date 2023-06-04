@@ -6,11 +6,10 @@
 
 namespace rend
 {
-	template<uint32_t HEIGHT, uint32_t WIDTH>
 	class tri
 	{
 	public:
-		tri(rend::surface<HEIGHT, WIDTH> &surface, std::array<double, 2> loc1, std::array<double, 2> loc2, std::array<double, 2> loc3)
+		tri(rend::surface &surface, std::array<double, 2> loc1, std::array<double, 2> loc2, std::array<double, 2> loc3)
 			: x1(loc1[0])
 			, y1(loc1[1])
 			, x2(loc2[0])
@@ -23,32 +22,26 @@ namespace rend
 
 		void draw()
 		{
-			rend::line<HEIGHT, WIDTH> {
+			rend::line {
 				surface,
 				{static_cast<int>(x1), static_cast<int>(y1)},
-				{static_cast<int>(x2), static_cast<int>(y2)}
+				{static_cast<int>(x2), static_cast<int>(y2)},
+        '*'
 			};
 
-			rend::line<HEIGHT, WIDTH> {
+			rend::line {
 				surface,
 				{static_cast<int>(x2), static_cast<int>(y2)},
-				{static_cast<int>(x3), static_cast<int>(y3)}
+				{static_cast<int>(x3), static_cast<int>(y3)},
+        '*'
 			};
 
-			rend::line<HEIGHT, WIDTH> {
+			rend::line {
 				surface,
 				{static_cast<int>(x3), static_cast<int>(y3)},
-				{static_cast<int>(x1), static_cast<int>(y1)}
+				{static_cast<int>(x1), static_cast<int>(y1)},
+        '*'
 			};
-
-			for (int i = 0; i < HEIGHT; ++i)
-			{
-				for (int j = 0; j < WIDTH; ++j)
-				{
-					std::cout << surface.chars[i][j];
-				}
-				std::cout << std::endl;
-			}
 		}
 
 		void rotate_max(double angle, double max)
@@ -111,6 +104,6 @@ namespace rend
 
 		double rotation_angle = 0.0;
 
-		rend::surface<HEIGHT, WIDTH> &surface;
+		rend::surface &surface;
 	};
 }

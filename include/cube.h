@@ -1,103 +1,115 @@
 #pragma once
-#include <iostream>
 #include <line.h>
 #include <math.h>
 #include <surface.h>
 
 namespace rend
 {
-
-	template<uint32_t HEIGHT, uint32_t WIDTH>
 	class cube
 	{
 	public:
-		cube(rend::surface<HEIGHT, WIDTH> &surface, double size, std::array<double, 3> position)
+		cube(rend::surface &surface, float vertices_size)
 			: surface(surface)
-			, size(size)
-			, position(position)
+			, vertices_size(vertices_size)
 		{
-			// Define the vertices of the cube
-			vertices = {
-				{{ -size / 2, -size / 2, -size / 2 },
-					{ size / 2, -size / 2, -size / 2 },
-					{ size / 2, size / 2, -size / 2 },
-					{ -size / 2, size / 2, -size / 2 },
-					{ -size / 2, -size / 2, size / 2 },
-					{ size / 2, -size / 2, size / 2 },
-					{ size / 2, size / 2, size / 2 },
-					{ -size / 2, size / 2, size / 2 }}
-			};
 		}
 
 		void draw()
 		{
-			// Draw the lines between the vertices to create the cube edges
-			for (size_t i = 0; i < vertices.size(); ++i)
+
+			float vertices[8][3] = {
+				{-vertices_size, -vertices_size, -vertices_size},
+				{ vertices_size, -vertices_size, -vertices_size},
+				{ vertices_size,	 vertices_size, -vertices_size},
+				{-vertices_size,  vertices_size, -vertices_size},
+				{-vertices_size, -vertices_size,  vertices_size},
+				{ vertices_size, -vertices_size,	 vertices_size},
+				{ vertices_size,	 vertices_size,	vertices_size},
+				{-vertices_size,  vertices_size,	 vertices_size}
+			};
+
+			int edges[12][2] = {
+				{0, 1},
+				{1, 2},
+				{2, 3},
+				{3, 0},
+				{4, 5},
+				{5, 6},
+				{6, 7},
+				{7, 4},
+				{0, 4},
+				{1, 5},
+				{2, 6},
+				{3, 7}
+			};
+
+			float rotation_x = angle_x * M_PI / 180.0;
+			float rotation_y = angle_y * M_PI / 180.0;
+
+			for (int i = 0; i < 8; ++i)
 			{
-				std::array<double, 3> translatedVertex1 = translate(vertices[i]);
-				std::array<double, 3> translatedVertex2 = translate(vertices[(i + 1) % vertices.size()]);
-				line3d<HEIGHT, WIDTH>(surface, translatedVertex1, translatedVertex2);
+				float y = vertices[i][1];
+				float z = vertices[i][2];
+
+				vertices[i][1] = y * cos(rotation_x) - z * sin(rotation_x);
+				vertices[i][2] = z * cos(rotation_x) + y * sin(rotation_x);
+			}
+
+			for (int i = 0; i < 8; ++i)
+			{
+				float x = vertices[i][0];
+				float z = vertices[i][2];
+
+				vertices[i][0] = x * cos(rotation_y) - z * sin(rotation_y);
+				vertices[i][2] = z * cos(rotation_y) + x * sin(rotation_y);
+			}
+
+			int coordinates[8][2];
+			auto [height, width] = surface.get_dimensions();
+
+			for (int i = 0; i < 8; ++i)
+			{
+				float x = vertices[i][0];
+				float y = vertices[i][1];
+				float z = vertices[i][2];
+				coordinates[i][0] = static_cast<int>(width / 2.0 + x * (width / 4.0));
+				coordinates[i][1] = static_cast<int>(height / 2.0 - y * (height / 4.0));
+			}
+
+			for (int i = 0; i < 12; ++i)
+			{
+				int x1 = coordinates[edges[i][0]][0];
+				int y1 = coordinates[edges[i][0]][1];
+				int x2 = coordinates[edges[i][1]][0];
+				int y2 = coordinates[edges[i][1]][1];
+
+				int index_table = static_cast<int>((vertices[edges[i][0]][2] + 1) * 128);
+				char symbol_table[] { '-', '=', '+', '*', '#' }; // FIXME better characters? idk
+
+				int index = index_table % sizeof(symbol_table);
+				char symbol = symbol_table[index];
+
+				rend::line {
+					surface,
+					{static_cast<int>(x1), static_cast<int>(y1)},
+					{static_cast<int>(x2), static_cast<int>(y2)},
+					symbol
+				};
 			}
 		}
 
-		void rotate(double angle_x, double angle_y, double angle_z)
+		void rotate(float x, float y)
 		{
-			rotation_angle_x += angle_x;
-			rotation_angle_y += angle_y;
-			rotation_angle_z += angle_z;
+			this->angle_x += x;
+			this->angle_y += y;
 		}
 
 	private:
-		rend::surface<HEIGHT, WIDTH> &surface;
-		double size;
-		std::array<double, 3> position;
-		std::array<std::array<double, 3>, 8> vertices;
-		double rotation_angle_x = 0.0;
-		double rotation_angle_y = 0.0;
-		double rotation_angle_z = 0.0;
+		float vertices_size;
 
-		void rotate(std::array<double, 3> &vertex, double angle_x, double angle_y, double angle_z)
-		{
-			// Rotate the vertex around the X-axis
-			double cos_theta_x = cos(angle_x);
-			double sin_theta_x = sin(angle_x);
-			double temp_y = vertex[1];
-			double temp_z = vertex[2];
-			vertex[1] = temp_y * cos_theta_x - temp_z * sin_theta_x;
-			vertex[2] = temp_y * sin_theta_x + temp_z * cos_theta_x;
+		float angle_x;
+		float angle_y;
 
-			// Rotate the vertex around the Y-axis
-			double cos_theta_y = cos(angle_y);
-			double sin_theta_y = sin(angle_y);
-			double temp_x = vertex[0];
-			temp_z = vertex[2];
-			vertex[0] = temp_x * cos_theta_y + temp_z * sin_theta_y;
-			vertex[2] = -temp_x * sin_theta_y + temp_z * cos_theta_y;
-
-			// Rotate the vertex around the Z-axis
-			double cos_theta_z = cos(angle_z);
-			double sin_theta_z = sin(angle_z);
-			temp_x = vertex[0];
-			temp_y = vertex[1];
-			vertex[0] = temp_x * cos_theta_z - temp_y * sin_theta_z;
-			vertex[1] = temp_x * sin_theta_z + temp_y * cos_theta_z;
-		}
-
-		std::array<double, 2> scale(const std::array<double, 3> &vertex)
-		{
-			// Scale the vertex based on its distance from the viewer
-			double scale_factor = position[2] / (position[2] + vertex[2]);
-			return { vertex[0] * scale_factor, vertex[1] * scale_factor };
-		}
-
-		std::array<double, 3> translate(const std::array<double, 3> &vertex)
-		{
-			// Translate the vertex based on its position in the surface and the cube's position
-			return {
-				vertex[0] + position[0],
-				vertex[1] + position[1],
-				vertex[2] + position[2]
-			};
-		}
+		rend::surface &surface;
 	};
 }
